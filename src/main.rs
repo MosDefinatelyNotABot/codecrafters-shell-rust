@@ -99,6 +99,11 @@ fn find_executables(path: &str) -> HashMap<String, String> {
     for exec in execs {
         let name = exec.file_name().to_string_lossy().into_owned();
         let exec_path = exec.path().to_string_lossy().into_owned();
+
+        if executables.contains_key(&name) {
+            continue;
+        }
+
         executables.insert(name, exec_path);
     }
 
