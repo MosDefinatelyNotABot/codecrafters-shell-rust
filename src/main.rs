@@ -75,13 +75,23 @@ fn find_executables(path: &str) -> HashMap<String, String> {
     let mut executables = HashMap::new();
 
     // implement crawling logic here.
-    let subdirs_and_execs = (std::fs::read_dir(path)
-        .unwrap()
+
+    // get all the elements in the path
+    let dirs_in_path = path
+        .split(":")
+        .into_iter()
+        .filter(|dir| !dir.is_empty())
+        .collect::<Vec<_>>();
+
+    // for each element
+    let subdirs_and_execs = dirs_in_path
+        .iter()
+        .flat_map(|dir| std::fs::read_dir(dir).unwrap())
         .filter_map(|entry| entry.ok())
         .filter(|entry| {
             entry.file_type().unwrap().is_dir() || (entry.metadata().unwrap().mode() & 0o100 != 0)
-        }))
-    .collect::<Vec<_>>();
+        })
+        .collect::<Vec<_>>();
 
     // split into executables and subdirectories
     let execs = subdirs_and_execs
@@ -91,19 +101,10 @@ fn find_executables(path: &str) -> HashMap<String, String> {
         .iter()
         .filter(|entry| entry.file_type().unwrap().is_dir());
 
-    let execs_in_subdirs =
-        subdirs.map(|entry| find_executables(&entry.path().to_string_lossy().into_owned()));
-
     for exec in execs {
         let name = exec.file_name().to_string_lossy().into_owned();
         let exec_path = exec.path().to_string_lossy().into_owned();
         executables.insert(name, exec_path);
-    }
-
-    for execs in execs_in_subdirs {
-        for (name, exec_path) in execs {
-            executables.insert(name, exec_path);
-        }
     }
 
     executables
