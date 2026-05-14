@@ -71,7 +71,11 @@ fn main_loop(execs: &HashMap<String, String>) {
             if args.len() != 1 {
                 println!("error try: cd <directory>");
             } else {
-                std::env::set_current_dir(&args[0]).expect("Failed to change directory");
+                let result = std::env::set_current_dir(&args[0]);
+
+                if let Err(_) = result {
+                    println!("{}: No such file or directory", args[0]);
+                }
             }
             continue;
         } else if execs.contains_key(cmd) {
