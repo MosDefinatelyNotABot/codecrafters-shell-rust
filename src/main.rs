@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
-use std::{collections::HashMap, os::unix::fs::MetadataExt};
+use std::{collections::HashMap, os::unix::fs::MetadataExt, process::Command};
 
 fn main() {
     let builtins = vec!["exit", "echo", "type"];
@@ -40,11 +40,14 @@ fn main_loop(execs: &HashMap<String, String>) {
         let args = &args_input[1..];
 
         // handle builtin commands
-        match cmd.as_str() {
-            "exit" => return,
-            "echo" => {
-                println!("{}", args.join(" "));
-                continue;
+        if cmd.as_str() == "exit" {
+            return;
+        } else if cmd.as_str() == "echo" {
+            println!("{}", args.join(" "));
+            continue;
+        } else if cmd.as_str() == "type" {
+            if args.len() != 1 {
+                println!("error try: type <command>");
             }
             "type" => {
                 if args.len() != 1 {
@@ -100,6 +103,10 @@ fn find_executables(path: &str) -> HashMap<String, String> {
         let name = exec.file_name().to_string_lossy().into_owned();
         let exec_path = exec.path().to_string_lossy().into_owned();
 
+<<<<<<< HEAD
+=======
+        // skipt it if it's alread there.
+>>>>>>> b4c1803 (codecrafters submit [skip ci])
         if executables.contains_key(&name) {
             continue;
         }
