@@ -88,18 +88,13 @@ fn find_executables(path: &str) -> HashMap<String, String> {
         .iter()
         .flat_map(|dir| std::fs::read_dir(dir).unwrap())
         .filter_map(|entry| entry.ok())
-        .filter(|entry| {
-            entry.file_type().unwrap().is_dir() || (entry.metadata().unwrap().mode() & 0o100 != 0)
-        })
+        .filter(|entry| entry.metadata().unwrap().mode() & 0o100 != 0)
         .collect::<Vec<_>>();
 
     // split into executables and subdirectories
     let execs = subdirs_and_execs
         .iter()
         .filter(|entry| entry.metadata().unwrap().mode() & 0o100 != 0);
-    let subdirs = subdirs_and_execs
-        .iter()
-        .filter(|entry| entry.file_type().unwrap().is_dir());
 
     for exec in execs {
         let name = exec.file_name().to_string_lossy().into_owned();
