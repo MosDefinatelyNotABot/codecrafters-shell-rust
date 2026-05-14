@@ -45,6 +45,9 @@ fn main_loop(execs: &HashMap<String, String>) {
         } else if cmd.as_str() == "echo" {
             println!("{}", args.join(" "));
             continue;
+        } else if cmd.as_str() == "pwd" {
+            println!("{}", std::env::current_dir().unwrap().to_string_lossy());
+            continue;
         } else if cmd.as_str() == "type" {
             if args.len() != 1 {
                 println!("error try: type <command>");
