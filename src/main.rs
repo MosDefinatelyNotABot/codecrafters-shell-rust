@@ -1,17 +1,22 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
-
-use bytes::buf;
+use std::{collections::HashMap, os::unix::fs::MetadataExt};
 
 fn main() {
-    // TODO: Uncomment the code below to pass the first stage
-
     let builtins = vec!["exit", "echo", "type"];
 
-    main_loop(builtins);
+    let path = std::env::var("PATH").unwrap_or_default();
+
+    let mut execs = find_executables(&path);
+
+    for bultin in builtins {
+        execs.insert(bultin.to_string(), "BUILTIN".to_string());
+    }
+
+    main_loop(&execs);
 }
 
-fn main_loop(builtins: Vec<&str>) {
+fn main_loop(execs: &HashMap<String, String>) {
     loop {
         print!("$ ");
         io::stdout().flush().unwrap();
@@ -43,12 +48,16 @@ fn main_loop(builtins: Vec<&str>) {
             }
             "type" => {
                 if args.len() != 1 {
-                    println!("type: usage: type <command>");
+                    println!("error try: type <command>");
                     continue;
                 }
-
-                if builtins.contains(&args[0].as_str()) {
-                    println!("{} is a shell builtin", args[0]);
+                if execs.contains_key(&args[0]) {
+                    // check if it's a shell builtin
+                    if execs[&args[0]] == "BUILTIN" {
+                        println!("{} is a shell builtin", args[0]);
+                    } else {
+                        println!("{} is {}", args[0], execs[&args[0]]);
+                    }
                     continue;
                 } else {
                     println!("{}: not found", args[0]);
@@ -60,4 +69,42 @@ fn main_loop(builtins: Vec<&str>) {
             }
         }
     }
+}
+
+fn find_executables(path: &str) -> HashMap<String, String> {
+    let mut executables = HashMap::new();
+
+    // implement crawling logic here.
+    let subdirs_and_execs = (std::fs::read_dir(path)
+        .unwrap()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry.file_type().unwrap().is_dir() || (entry.metadata().unwrap().mode() & 0o100 != 0)
+        }))
+    .collect::<Vec<_>>();
+
+    // split into executables and subdirectories
+    let execs = subdirs_and_execs
+        .iter()
+        .filter(|entry| entry.metadata().unwrap().mode() & 0o100 != 0);
+    let subdirs = subdirs_and_execs
+        .iter()
+        .filter(|entry| entry.file_type().unwrap().is_dir());
+
+    let execs_in_subdirs =
+        subdirs.map(|entry| find_executables(&entry.path().to_string_lossy().into_owned()));
+
+    for exec in execs {
+        let name = exec.file_name().to_string_lossy().into_owned();
+        let exec_path = exec.path().to_string_lossy().into_owned();
+        executables.insert(name, exec_path);
+    }
+
+    for execs in execs_in_subdirs {
+        for (name, exec_path) in execs {
+            executables.insert(name, exec_path);
+        }
+    }
+
+    executables
 }
