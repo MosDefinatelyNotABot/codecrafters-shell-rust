@@ -3,7 +3,7 @@ use std::io::{self, Write};
 use std::{collections::HashMap, os::unix::fs::MetadataExt, process::Command};
 
 fn main() {
-    let builtins = vec!["exit", "echo", "type"];
+    let builtins = vec!["exit", "echo", "type", "pwd"];
 
     let path = std::env::var("PATH").unwrap_or_default();
 
