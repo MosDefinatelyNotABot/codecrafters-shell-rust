@@ -12,16 +12,26 @@ fn main_loop() {
         print!("$ ");
         io::stdout().flush().unwrap();
 
-        let mut cmd = String::new();
+        let mut cmd_input = String::new();
 
         io::stdin()
-            .read_line(&mut cmd)
+            .read_line(&mut cmd_input)
             .expect("Failed to readline.");
 
-        let cmd = cmd.trim();
+        let args_input: Vec<String> = cmd_input
+            .split_whitespace()
+            .map(|s| s.to_string())
+            .collect();
 
-        match cmd {
+        let cmd = &args_input[0];
+        let args = &args_input[1..];
+
+        match cmd.as_str() {
             "exit" => return,
+            "echo" => {
+                println!("{}", args.join(" "));
+                continue;
+            }
             _ => {
                 println!("{}: command not found", cmd);
             }
