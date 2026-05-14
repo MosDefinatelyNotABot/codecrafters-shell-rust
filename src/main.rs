@@ -105,10 +105,6 @@ fn find_executables(path: &str) -> HashMap<String, String> {
         let name = exec.file_name().to_string_lossy().into_owned();
         let exec_path = exec.path().to_string_lossy().into_owned();
 
-<<<<<<< HEAD
-=======
-        // skipt it if it's alread there.
->>>>>>> b4c1803 (codecrafters submit [skip ci])
         if executables.contains_key(&name) {
             continue;
         }
