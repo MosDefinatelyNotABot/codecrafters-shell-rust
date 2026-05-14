@@ -49,27 +49,29 @@ fn main_loop(execs: &HashMap<String, String>) {
             if args.len() != 1 {
                 println!("error try: type <command>");
             }
-            "type" => {
-                if args.len() != 1 {
-                    println!("error try: type <command>");
-                    continue;
-                }
-                if execs.contains_key(&args[0]) {
-                    // check if it's a shell builtin
-                    if execs[&args[0]] == "BUILTIN" {
-                        println!("{} is a shell builtin", args[0]);
-                    } else {
-                        println!("{} is {}", args[0], execs[&args[0]]);
-                    }
-                    continue;
+
+            if execs.contains_key(&args[0]) {
+                // check if it's a shell builtin
+                if execs[&args[0]] == "BUILTIN" {
+                    println!("{} is a shell builtin", args[0]);
                 } else {
-                    println!("{}: not found", args[0]);
-                    continue;
+                    println!("{} is {}", args[0], execs[&args[0]]);
                 }
+            } else {
+                println!("{}: not found", args[0]);
             }
-            _ => {
-                println!("{}: command not found", cmd);
-            }
+
+            continue;
+        } else if execs.contains_key(cmd) {
+            let output = Command::new(cmd)
+                .args(args)
+                .output()
+                .expect("{} failed to execute.");
+
+            print!("{}", String::from_utf8_lossy(&output.stdout));
+        } else {
+            println!("{}: not found", cmd);
+            continue;
         }
     }
 }
