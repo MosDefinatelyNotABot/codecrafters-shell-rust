@@ -71,10 +71,15 @@ fn main_loop(execs: &HashMap<String, String>) {
             if args.len() != 1 {
                 println!("error try: cd <directory>");
             } else {
-                let result = std::env::set_current_dir(&args[0]);
-
-                if let Err(_) = result {
-                    println!("{}: No such file or directory", args[0]);
+                if &args[0] == "~" {
+                    let home = std::env::var("HOME").unwrap_or_default();
+                    std::env::set_current_dir(&home)
+                        .expect(&format!("{}: No such file or directory", home));
+                } else {
+                    let result = std::env::set_current_dir(&args[0]);
+                    if let Err(_) = result {
+                        println!("{}: No such file or directory", args[0]);
+                    }
                 }
             }
             continue;
