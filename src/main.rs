@@ -1,9 +1,11 @@
-#[allow(unused_imports)]
+mod find_executables;
+
+use find_executables::find_executables;
 use std::io::{self, Write};
-use std::{collections::HashMap, os::unix::fs::MetadataExt, process::Command};
+use std::{collections::HashMap, process::Command};
 
 fn main() {
-    let builtins = vec!["exit", "echo", "type", "pwd"];
+    let builtins = vec!["exit", "echo", "type", "pwd", "cd"];
 
     let path = std::env::var("PATH").unwrap_or_default();
 
@@ -65,6 +67,13 @@ fn main_loop(execs: &HashMap<String, String>) {
             }
 
             continue;
+        } else if cmd.as_str() == "cd" {
+            if args.len() != 1 {
+                println!("error try: cd <directory>");
+            } else {
+                std::env::set_current_dir(&args[0]).expect("Failed to change directory");
+            }
+            continue;
         } else if execs.contains_key(cmd) {
             let output = Command::new(cmd)
                 .args(args)
@@ -77,43 +86,4 @@ fn main_loop(execs: &HashMap<String, String>) {
             continue;
         }
     }
-}
-
-fn find_executables(path: &str) -> HashMap<String, String> {
-    let mut executables = HashMap::new();
-
-    // implement crawling logic here.
-
-    // get all the elements in the path
-    let dirs_in_path = path
-        .split(":")
-        .into_iter()
-        .filter(|dir| !dir.is_empty())
-        .collect::<Vec<_>>();
-
-    // for each element
-    let subdirs_and_execs = dirs_in_path
-        .iter()
-        .flat_map(|dir| std::fs::read_dir(dir).unwrap())
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.metadata().unwrap().mode() & 0o001 != 0)
-        .collect::<Vec<_>>();
-
-    // split into executables and subdirectories
-    let execs = subdirs_and_execs
-        .iter()
-        .filter(|entry| entry.metadata().unwrap().mode() & 0o001 != 0);
-
-    for exec in execs {
-        let name = exec.file_name().to_string_lossy().into_owned();
-        let exec_path = exec.path().to_string_lossy().into_owned();
-
-        if executables.contains_key(&name) {
-            continue;
-        }
-
-        executables.insert(name, exec_path);
-    }
-
-    executables
 }
