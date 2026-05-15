@@ -1,6 +1,8 @@
 mod find_executables;
+mod parse_echo;
 
 use find_executables::find_executables;
+use parse_echo::parse_echo;
 use std::io::{self, Write};
 use std::{collections::HashMap, process::Command};
 
@@ -45,7 +47,8 @@ fn main_loop(execs: &HashMap<String, String>) {
         if cmd.as_str() == "exit" {
             return;
         } else if cmd.as_str() == "echo" {
-            println!("{}", args.join(" "));
+            let out_str = parse_echo(&cmd_input);
+            print!("{}", out_str);
             continue;
         } else if cmd.as_str() == "pwd" {
             println!("{}", std::env::current_dir().unwrap().to_string_lossy());
