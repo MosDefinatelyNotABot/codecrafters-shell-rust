@@ -46,11 +46,12 @@ pub(crate) fn quote_parser(args: &String) -> Vec<String> {
                     {
                         break;
                     } else {
-                        chars_iter.next();
-                        break;
+                        // chars_iter.next();
+                        // break;
                     }
+                } else {
+                    snippet.push(c);
                 }
-                snippet.push(c);
             }
 
             // push the snippet to the output and reset.
