@@ -199,11 +199,19 @@ mod tests {
                 "echo \"A \\\" inside double quotes\"".to_string(),
                 "A \" inside double quotes".to_string(),
             ),
+            (
+                "echo \"just\'one\'\\\\n'backslash\"".to_string(),
+                "just\'one\'\\n'backslash".to_string(),
+            ),
+            (
+                "echo \"inside\\\" literal_quote.\"outside\\\"".to_string(),
+                "inside\"literal_quote.outside\"".to_string(),
+            ),
         ];
 
         for (idx, (input, expected)) in test_strings.iter().enumerate() {
             println!(
-                "{:<2} {:<23} -> [{}]\t-> {}",
+                "{:<2} {:<40} -> [{}]\t-> {}",
                 idx,
                 input,
                 quote_parser(&input).join(", "),

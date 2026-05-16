@@ -48,7 +48,7 @@ fn main_loop(execs: &HashMap<String, String>) {
             return;
         } else if cmd.as_str() == "echo" {
             let out_str = quote_parser(&cmd_input);
-            println!("{}", out_str.join(" "));
+            println!("{}", out_str.join(" ").trim());
             continue;
         } else if cmd.as_str() == "pwd" {
             println!("{}", std::env::current_dir().unwrap().to_string_lossy());
