@@ -4,10 +4,11 @@ pub(crate) fn quote_parser(args: &String) -> Vec<String> {
     // string builder pattern
     let mut output = Vec::<String>::new();
 
-    // strip the command string
+    // strip the command part of the string
     let input = args.split(" ").collect::<Vec<_>>()[1..]
         .join(" ")
         .replace("''", "")
+        .replace("\"\"", "")
         .to_string();
 
     // consume the input string and split into snippets
@@ -22,6 +23,33 @@ pub(crate) fn quote_parser(args: &String) -> Vec<String> {
             while let Some(c) = chars_iter.next() {
                 if c == '\'' {
                     break;
+                }
+                snippet.push(c);
+            }
+
+            // push the snippet to the output and reset.
+            if !snippet.trim().is_empty() {
+                output.push(snippet.trim().to_string());
+                snippet = String::new();
+            }
+        } else if char == '"' {
+            // advance to the next quote
+            // and capture the snippet
+            while let Some(c) = chars_iter.next() {
+                if c == '"' {
+                    // peek ahead to see if next char is whitespace
+                    if chars_iter
+                        .clone()
+                        .peekable()
+                        .peek()
+                        .is_some_and(|c| c.is_whitespace())
+                    {
+                        break;
+                    } else {
+                        break;
+                    }
+                    // break;
+                    // chars_iter.next();
                 }
                 snippet.push(c);
             }
