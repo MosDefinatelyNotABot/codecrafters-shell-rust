@@ -16,8 +16,13 @@ pub(crate) fn quote_parser(args: &String) -> Vec<String> {
     let mut chars_iter = input.chars();
 
     while let Some(char) = chars_iter.next() {
-        // println!("'{}'", char);
-        if char == '\'' {
+        if char == '\\' {
+            // push the next char and advance
+            let next_char = chars_iter.next();
+            if let Some(next_char) = next_char {
+                snippet.push(next_char);
+            }
+        } else if char == '\'' {
             // advance to the next quote
             // and capture the snippet
             while let Some(c) = chars_iter.next() {
@@ -56,14 +61,13 @@ pub(crate) fn quote_parser(args: &String) -> Vec<String> {
 
             // push the snippet to the output and reset.
             if !snippet.trim().is_empty() {
-                output.push(snippet.trim().to_string());
+                output.push(snippet.to_string());
                 snippet = String::new();
             }
         } else if char.is_whitespace() {
             input.chars().next();
-            // println!("{}", snippet);
             if !snippet.trim().is_empty() {
-                output.push(snippet.trim().to_string());
+                output.push(snippet.to_string());
                 snippet = String::new();
             }
         } else {
@@ -73,8 +77,95 @@ pub(crate) fn quote_parser(args: &String) -> Vec<String> {
 
     // push the last snippet
     if !snippet.trim().is_empty() {
-        output.push(snippet.trim().to_string());
+        output.push(snippet.to_string());
     }
 
     output
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_single_quotes() {
+        let test_strings = vec![
+            ("echo 'hello world'".to_string(), "hello world".to_string()),
+            (
+                "echo 'hello         world'".to_string(),
+                "hello         world".to_string(),
+            ),
+            (
+                "echo hello         world".to_string(),
+                "hello world".to_string(),
+            ),
+            ("echo 'hello''world'".to_string(), "helloworld".to_string()),
+            ("cat 'test file'".to_string(), "test file".to_string()),
+        ];
+
+        for (input, expected) in test_strings {
+            assert_eq!(quote_parser(&input).join(" "), expected);
+        }
+    }
+
+    #[test]
+    fn test_double_quotes() {
+        let test_strings = vec![
+            (
+                "echo \"hello      world\"".to_string(),
+                "hello      world".to_string(),
+            ),
+            (
+                "echo \"hello\"\"world\"".to_string(),
+                "helloworld".to_string(),
+            ),
+            ("echo \"hello\"world".to_string(), "helloworld".to_string()),
+            (
+                "echo \"hello\" \"world\"".to_string(),
+                "hello world".to_string(),
+            ),
+            (
+                "echo \"Shell's test\"".to_string(),
+                "Shell's test".to_string(),
+            ),
+        ];
+
+        for (input, expected) in test_strings {
+            assert_eq!(quote_parser(&input).join(" "), expected);
+        }
+    }
+
+    #[test]
+    fn test_escape_strings() {
+        let test_strings = vec![
+            (
+                "echo three\\ \\ \\ spaces".to_string(),
+                "three   spaces".to_string(),
+            ),
+            (
+                "echo before\\  after".to_string(),
+                "before  after".to_string(),
+            ),
+            (
+                "echo test\\nexample".to_string(),
+                "testnexample".to_string(),
+            ),
+            (
+                "echo hello\\\\world".to_string(),
+                "hello\\world".to_string(),
+            ),
+            ("echo \\'hello\\'".to_string(), "'hello'".to_string()),
+        ];
+
+        for (idx, (input, expected)) in test_strings.iter().enumerate() {
+            println!(
+                "{:<2} {:<23} -> [{}]\t-> {}",
+                idx,
+                input,
+                quote_parser(&input).join(", "),
+                quote_parser(&input).join(" ")
+            );
+            assert_eq!(quote_parser(&input).join(" "), *expected);
+        }
+    }
 }

@@ -7,29 +7,6 @@ use std::io::{self, Write};
 use std::{collections::HashMap, process::Command};
 
 fn main() {
-    // let test_strings = vec![
-    //     "echo hello world".to_string(),
-    //     "echo 'hello         world'".to_string(),
-    //     "echo hello         world".to_string(),
-    //     "echo 'hello''world'".to_string(),
-    //     "echo hello''world".to_string(),
-    //     "cat 'test file'".to_string(),
-    //     "echo \"hello      world\"".to_string(),
-    //     "echo \"hello\"\"world\"".to_string(),
-    //     "echo \"hello\"world".to_string(),
-    //     "echo \"hello\" \"world\"".to_string(),
-    //     "echo \"Shell's test\"".to_string(),
-    // ];
-
-    // for (idx, test_string) in test_strings.iter().enumerate() {
-    //     println!(
-    //         "{:<3} '{:<28}' -> [{}]",
-    //         idx,
-    //         test_string,
-    //         quote_parser(test_string).join(", ")
-    //     );
-    // }
-
     let builtins = vec!["exit", "echo", "type", "pwd", "cd"];
 
     let path = std::env::var("PATH").unwrap_or_default();
