@@ -1,12 +1,30 @@
 mod find_executables;
-mod parse_echo;
+mod parse_args;
 
 use find_executables::find_executables;
-use parse_echo::parse_echo;
+use parse_args::quote_parser;
 use std::io::{self, Write};
 use std::{collections::HashMap, process::Command};
 
 fn main() {
+    // let test_inputs = vec![
+    //     "echo hello world".to_string(),
+    //     "echo 'hello         world'".to_string(),
+    //     "echo hello         world".to_string(),
+    //     "echo 'hello''world'".to_string(),
+    //     "echo hello''world".to_string(),
+    //     "cat 'test file'".to_string(),
+    // ];
+
+    // for (idx, input) in test_inputs.iter().enumerate() {
+    //     println!(
+    //         "{} {:<30} -> [{}]",
+    //         idx,
+    //         input,
+    //         quote_parser(input).join(", ")
+    //     );
+    // }
+
     let builtins = vec!["exit", "echo", "type", "pwd", "cd"];
 
     let path = std::env::var("PATH").unwrap_or_default();
@@ -40,15 +58,15 @@ fn main_loop(execs: &HashMap<String, String>) {
             .collect();
 
         // short hand
-        let cmd = &args_input[0];
-        let args = &args_input[1..];
+        let cmd: &String = &args_input[0];
+        let args: &[String] = &args_input[1..];
 
         // handle builtin commands
         if cmd.as_str() == "exit" {
             return;
         } else if cmd.as_str() == "echo" {
-            let out_str = parse_echo(&cmd_input);
-            print!("{}", out_str);
+            let out_str = quote_parser(&cmd_input);
+            println!("{}", out_str.join(" "));
             continue;
         } else if cmd.as_str() == "pwd" {
             println!("{}", std::env::current_dir().unwrap().to_string_lossy());
@@ -87,8 +105,10 @@ fn main_loop(execs: &HashMap<String, String>) {
             }
             continue;
         } else if execs.contains_key(cmd) {
+            let args_vec = quote_parser(&cmd_input);
+
             let output = Command::new(cmd)
-                .args(args)
+                .args(args_vec)
                 .output()
                 .expect("{} failed to execute.");
 
