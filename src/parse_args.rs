@@ -1,17 +1,14 @@
 static SPECIAL_CHARS: &[char] = &['\"', '\\', '$', '`', '\n'];
 
-pub(crate) fn quote_parser(args: &String) -> Vec<String> {
+pub(crate) fn quote_parser(args: &String) -> (String, Vec<String>) {
     // parse the args with quotes into a vector of strings
+    // extract the command part of the string
+
+    // strip the command part of the string
+    let input = args.replace("''", "").replace("\"\"", "").to_string();
 
     // string builder pattern
     let mut output = Vec::<String>::new();
-
-    // strip the command part of the string
-    let input = args.split(" ").collect::<Vec<_>>()[1..]
-        .join(" ")
-        .replace("''", "")
-        .replace("\"\"", "")
-        .to_string();
 
     // consume the input string and split into snippets
     let mut snippet = String::new();
@@ -85,139 +82,131 @@ pub(crate) fn quote_parser(args: &String) -> Vec<String> {
         output.push(snippet.to_string());
     }
 
-    output
+    (output[0].to_string(), output[1..].to_vec())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    fn parse(input: &str) -> (String, String) {
+        let (cmd, args) = quote_parser(&input.to_string());
+        (cmd, args.join(" "))
+    }
+
     #[test]
     fn test_single_quotes() {
-        let test_strings = vec![
-            ("echo 'hello world'".to_string(), "hello world".to_string()),
-            (
-                "echo 'hello         world'".to_string(),
-                "hello         world".to_string(),
-            ),
-            (
-                "echo hello         world".to_string(),
-                "hello world".to_string(),
-            ),
-            ("echo 'hello''world'".to_string(), "helloworld".to_string()),
-            ("cat 'test file'".to_string(), "test file".to_string()),
+        let cases = [
+            ("echo 'hello world'", "echo", "hello world"),
+            ("echo 'hello         world'", "echo", "hello         world"),
+            ("echo hello         world", "echo", "hello world"),
+            ("echo 'hello''world'", "echo", "helloworld"),
+            ("cat 'test file'", "cat", "test file"),
         ];
 
-        for (idx, (input, expected)) in test_strings.iter().enumerate() {
-            println!(
-                "{:<2} {:<23} -> [{}]\t-> {}",
-                idx,
-                input,
-                quote_parser(&input).join(", "),
-                quote_parser(&input).join(" ")
+        for (input, expected_cmd, expected_args) in cases {
+            let (cmd, args) = parse(input);
+            assert_eq!(
+                (cmd.as_str(), args.as_str()),
+                (expected_cmd, expected_args),
+                "input: {input}"
             );
-            assert_eq!(quote_parser(&input).join(" "), *expected);
         }
     }
 
     #[test]
     fn test_double_quotes() {
-        let test_strings = vec![
-            (
-                "echo \"hello      world\"".to_string(),
-                "hello      world".to_string(),
-            ),
-            (
-                "echo \"hello\"\"world\"".to_string(),
-                "helloworld".to_string(),
-            ),
-            ("echo \"hello\"world".to_string(), "helloworld".to_string()),
-            (
-                "echo \"hello\" \"world\"".to_string(),
-                "hello world".to_string(),
-            ),
-            (
-                "echo \"Shell's test\"".to_string(),
-                "Shell's test".to_string(),
-            ),
+        let cases = [
+            ("echo \"hello      world\"", "echo", "hello      world"),
+            ("echo \"hello\"\"world\"", "echo", "helloworld"),
+            ("echo \"hello\"world", "echo", "helloworld"),
+            ("echo \"hello\" \"world\"", "echo", "hello world"),
+            ("echo \"Shell's test\"", "echo", "Shell's test"),
         ];
 
-        for (idx, (input, expected)) in test_strings.iter().enumerate() {
-            println!(
-                "{:<2} {:<23} -> [{}]\t-> {}",
-                idx,
-                input,
-                quote_parser(&input).join(", "),
-                quote_parser(&input).join(" ")
+        for (input, expected_cmd, expected_args) in cases {
+            let (cmd, args) = parse(input);
+            assert_eq!(
+                (cmd.as_str(), args.as_str()),
+                (expected_cmd, expected_args),
+                "input: {input}"
             );
-            assert_eq!(quote_parser(&input).join(" "), *expected);
         }
     }
 
     #[test]
     fn test_escape_strings() {
-        let test_strings = vec![
-            (
-                "echo three\\ \\ \\ spaces".to_string(),
-                "three   spaces".to_string(),
-            ),
-            (
-                "echo before\\  after".to_string(),
-                "before  after".to_string(),
-            ),
-            (
-                "echo test\\nexample".to_string(),
-                "testnexample".to_string(),
-            ),
-            (
-                "echo hello\\\\world".to_string(),
-                "hello\\world".to_string(),
-            ),
-            ("echo \\'hello\\'".to_string(), "'hello'".to_string()),
+        let cases = [
+            ("echo three\\ \\ \\ spaces", "echo", "three   spaces"),
+            ("echo before\\  after", "echo", "before  after"),
+            ("echo test\\nexample", "echo", "testnexample"),
+            ("echo hello\\\\world", "echo", "hello\\world"),
+            ("echo \\'hello\\'", "echo", "'hello'"),
         ];
 
-        for (idx, (input, expected)) in test_strings.iter().enumerate() {
-            println!(
-                "{:<2} {:<23} -> [{}]\t-> {}",
-                idx,
-                input,
-                quote_parser(&input).join(", "),
-                quote_parser(&input).join(" ")
+        for (input, expected_cmd, expected_args) in cases {
+            let (cmd, args) = parse(input);
+            assert_eq!(
+                (cmd.as_str(), args.as_str()),
+                (expected_cmd, expected_args),
+                "input: {input}"
             );
-            assert_eq!(quote_parser(&input).join(" "), *expected);
         }
     }
 
     #[test]
     fn test_literal_special_chars_in_double_quotes() {
-        let test_strings = vec![
+        let cases = [
             (
-                "echo \"A \\\\ escapes itself\"".to_string(),
-                "A \\ escapes itself".to_string(),
+                "echo \"A \\\\ escapes itself\"",
+                "echo",
+                "A \\ escapes itself",
             ),
             (
-                "echo \"A \\\" inside double quotes\"".to_string(),
-                "A \" inside double quotes".to_string(),
+                "echo \"A \\\" inside double quotes\"",
+                "echo",
+                "A \" inside double quotes",
             ),
             (
-                "echo \"just\'one\'\\\\n'backslash\"".to_string(),
-                "just\'one\'\\n'backslash".to_string(),
+                "echo \"just\'one\'\\\\n'backslash\"",
+                "echo",
+                "just\'one\'\\n'backslash",
             ),
             (
-                "echo \"inside\\\" literal_quote.\"outside\\\"".to_string(),
-                "inside\"literal_quote.outside\"".to_string(),
+                "echo \"inside\\\"literal_quote.\"outside\\\"",
+                "echo",
+                "inside\"literal_quote.outside\"",
             ),
         ];
 
-        for (idx, (input, expected)) in test_strings.iter().enumerate() {
-            println!(
-                "{:<2} {:<40} -> [{}]\t-> {}",
-                idx,
-                input,
-                quote_parser(&input).join(", "),
-                quote_parser(&input).join(" ")
+        for (input, expected_cmd, expected_args) in cases {
+            let (cmd, args) = parse(input);
+            assert_eq!(
+                (cmd.as_str(), args.as_str()),
+                (expected_cmd, expected_args),
+                "input: {input}"
             );
-            assert_eq!(quote_parser(&input).join(" "), *expected);
+        }
+    }
+
+    #[test]
+    fn test_quoted_executable_names() {
+        let cases = [
+            ("'my program' argument1", "my program", "argument1"),
+            (
+                "\"exe with spaces\" file.txt",
+                "exe with spaces",
+                "file.txt",
+            ),
+        ];
+
+        for (input, expected_cmd, expected_args) in cases {
+            let (cmd, args) = parse(input);
+            assert_eq!(
+                (cmd.as_str(), args.as_str()),
+                (expected_cmd, expected_args),
+                "input: {input}"
+            );
         }
     }
 }

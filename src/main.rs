@@ -6,14 +6,14 @@ use parse_args::quote_parser;
 use std::io::{self, Write};
 use std::{collections::HashMap, process::Command};
 
-fn main() {
-    let builtins = vec!["exit", "echo", "type", "pwd", "cd"];
+static BUILTINS: &[&str] = &["exit", "echo", "type", "pwd", "cd"];
 
+fn main() {
     let path = std::env::var("PATH").unwrap_or_default();
 
     let mut execs = find_executables(&path);
 
-    for bultin in builtins {
+    for bultin in BUILTINS {
         execs.insert(bultin.to_string(), "BUILTIN".to_string());
     }
 
@@ -34,26 +34,21 @@ fn main_loop(execs: &HashMap<String, String>) {
             .expect("Failed to readline.");
 
         // parse user input into command and arguments
-        let args_input: Vec<String> = cmd_input
-            .split_whitespace()
-            .map(|s| s.to_string())
-            .collect();
-
-        // short hand
-        let cmd: &String = &args_input[0];
-        let args: &[String] = &args_input[1..];
+        let (cmd, args) = quote_parser(&cmd_input);
 
         // handle builtin commands
         if cmd.as_str() == "exit" {
             return;
         } else if cmd.as_str() == "echo" {
-            let out_str = quote_parser(&cmd_input);
-            println!("{}", out_str.join(" ").trim());
+            // prints args to stdout
+            println!("{}", args.join(" ").trim());
             continue;
         } else if cmd.as_str() == "pwd" {
+            // prints current directory to stdout
             println!("{}", std::env::current_dir().unwrap().to_string_lossy());
             continue;
         } else if cmd.as_str() == "type" {
+            // prints the type of the command to stdout
             if args.len() != 1 {
                 println!("error try: type <command>");
             }
@@ -71,6 +66,7 @@ fn main_loop(execs: &HashMap<String, String>) {
 
             continue;
         } else if cmd.as_str() == "cd" {
+            // changes directory to the specified path
             if args.len() != 1 {
                 println!("error try: cd <directory>");
             } else {
@@ -86,8 +82,9 @@ fn main_loop(execs: &HashMap<String, String>) {
                 }
             }
             continue;
-        } else if execs.contains_key(cmd) {
-            let args_vec = quote_parser(&cmd_input);
+        } else if execs.contains_key(&cmd) {
+            // executes shell command with args
+            let args_vec = quote_parser(&cmd_input).1;
 
             let output = Command::new(cmd)
                 .args(args_vec)
@@ -96,6 +93,7 @@ fn main_loop(execs: &HashMap<String, String>) {
 
             print!("{}", String::from_utf8_lossy(&output.stdout));
         } else {
+            // error message if command not found
             println!("{}: not found", cmd);
             continue;
         }
