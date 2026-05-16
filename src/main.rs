@@ -7,24 +7,6 @@ use std::io::{self, Write};
 use std::{collections::HashMap, process::Command};
 
 fn main() {
-    // let test_inputs = vec![
-    //     "echo hello world".to_string(),
-    //     "echo 'hello         world'".to_string(),
-    //     "echo hello         world".to_string(),
-    //     "echo 'hello''world'".to_string(),
-    //     "echo hello''world".to_string(),
-    //     "cat 'test file'".to_string(),
-    // ];
-
-    // for (idx, input) in test_inputs.iter().enumerate() {
-    //     println!(
-    //         "{} {:<30} -> [{}]",
-    //         idx,
-    //         input,
-    //         quote_parser(input).join(", ")
-    //     );
-    // }
-
     let builtins = vec!["exit", "echo", "type", "pwd", "cd"];
 
     let path = std::env::var("PATH").unwrap_or_default();
