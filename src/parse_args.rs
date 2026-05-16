@@ -1,3 +1,5 @@
+static SPECIAL_CHARS: &[char] = &['\"', '\\', '$', '`', '\n'];
+
 pub(crate) fn quote_parser(args: &String) -> Vec<String> {
     // parse the args with quotes into a vector of strings
 
@@ -41,7 +43,13 @@ pub(crate) fn quote_parser(args: &String) -> Vec<String> {
             // advance to the next quote
             // and capture the snippet
             while let Some(c) = chars_iter.next() {
-                if c == '"' {
+                if c == '\\' {
+                    let next_c = chars_iter.next();
+
+                    if next_c.is_some() && SPECIAL_CHARS.contains(&next_c.unwrap()) {
+                        snippet.push(next_c.unwrap());
+                    }
+                } else if c == '"' {
                     // peek ahead to see if next char is whitespace
                     if chars_iter
                         .clone()
@@ -50,9 +58,6 @@ pub(crate) fn quote_parser(args: &String) -> Vec<String> {
                         .is_some_and(|c| c.is_whitespace())
                     {
                         break;
-                    } else {
-                        // chars_iter.next();
-                        // break;
                     }
                 } else {
                     snippet.push(c);
@@ -103,8 +108,15 @@ mod tests {
             ("cat 'test file'".to_string(), "test file".to_string()),
         ];
 
-        for (input, expected) in test_strings {
-            assert_eq!(quote_parser(&input).join(" "), expected);
+        for (idx, (input, expected)) in test_strings.iter().enumerate() {
+            println!(
+                "{:<2} {:<23} -> [{}]\t-> {}",
+                idx,
+                input,
+                quote_parser(&input).join(", "),
+                quote_parser(&input).join(" ")
+            );
+            assert_eq!(quote_parser(&input).join(" "), *expected);
         }
     }
 
@@ -130,8 +142,15 @@ mod tests {
             ),
         ];
 
-        for (input, expected) in test_strings {
-            assert_eq!(quote_parser(&input).join(" "), expected);
+        for (idx, (input, expected)) in test_strings.iter().enumerate() {
+            println!(
+                "{:<2} {:<23} -> [{}]\t-> {}",
+                idx,
+                input,
+                quote_parser(&input).join(", "),
+                quote_parser(&input).join(" ")
+            );
+            assert_eq!(quote_parser(&input).join(" "), *expected);
         }
     }
 
@@ -155,6 +174,31 @@ mod tests {
                 "hello\\world".to_string(),
             ),
             ("echo \\'hello\\'".to_string(), "'hello'".to_string()),
+        ];
+
+        for (idx, (input, expected)) in test_strings.iter().enumerate() {
+            println!(
+                "{:<2} {:<23} -> [{}]\t-> {}",
+                idx,
+                input,
+                quote_parser(&input).join(", "),
+                quote_parser(&input).join(" ")
+            );
+            assert_eq!(quote_parser(&input).join(" "), *expected);
+        }
+    }
+
+    #[test]
+    fn test_literal_special_chars_in_double_quotes() {
+        let test_strings = vec![
+            (
+                "echo \"A \\\\ escapes itself\"".to_string(),
+                "A \\ escapes itself".to_string(),
+            ),
+            (
+                "echo \"A \\\" inside double quotes\"".to_string(),
+                "A \" inside double quotes".to_string(),
+            ),
         ];
 
         for (idx, (input, expected)) in test_strings.iter().enumerate() {
