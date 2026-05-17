@@ -148,7 +148,7 @@ fn main_loop(execs: &HashMap<String, String>) {
         }
 
         if !standard_err.is_empty() {
-            eprintln!("{}", standard_err.trim());
+            println!("{}", standard_err.trim());
         }
     }
 }
