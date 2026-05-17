@@ -36,22 +36,34 @@ fn main_loop(execs: &HashMap<String, String>) {
 
         // parse user input into command and arguments
         let (cmd, mut args) = quote_parser(&cmd_input);
-        let mut output_file: Option<String> = None;
+        let mut std_out_fname: Option<String> = None;
+        let mut std_err_fname: Option<String> = None;
 
         let mut standard_out = String::new();
         let mut standard_err = String::new();
 
         // check for output redirection
-        if args.contains(&">".to_string()) || args.contains(&"1>".to_string()) {
+        if args.contains(&">".to_string())
+            || args.contains(&"1>".to_string())
+            || args.contains(&"2>".to_string())
+        {
             let pipe_index = args
                 .iter()
-                .position(|arg| arg == ">" || arg == "1>")
+                .position(|arg| arg == ">" || arg == "1>" || arg == "2>")
                 // should not ever be None
                 .expect("No output redirection operator found.");
 
+            let is_sent_to_err = args[pipe_index] == "2>";
+
             // output_file = Some(args.get(pipe_index + 1).expect("").clone());
             match args.get(pipe_index + 1) {
-                Some(file) => output_file = Some(file.clone()),
+                Some(file) => {
+                    if is_sent_to_err {
+                        std_err_fname = Some(file.clone());
+                    } else {
+                        std_out_fname = Some(file.clone());
+                    }
+                }
                 None => standard_err = "No output file specified.".to_string(),
             }
 
@@ -129,26 +141,39 @@ fn main_loop(execs: &HashMap<String, String>) {
         }
 
         // at the end of each iteration, print the output and error messages
-
-        if output_file.is_some() && !standard_out.is_empty() {
-            match File::create(output_file.as_ref().expect("output_file is None")) {
-                Ok(mut file) => {
-                    match file.write_all(standard_out.as_bytes()) {
-                        Ok(_) => {}
-                        Err(_) => eprintln!("Failed to write to output file."),
-                    };
+        // handle standard out
+        if !standard_out.is_empty() {
+            if std_out_fname.is_some() {
+                match File::create(std_out_fname.as_ref().expect("output_file is None")) {
+                    Ok(mut file) => {
+                        match file.write_all(standard_out.as_bytes()) {
+                            Ok(_) => {}
+                            Err(_) => eprintln!("Failed to write to output file."),
+                        };
+                    }
+                    Err(_) => eprintln!("Failed to create output file."),
                 }
-                Err(_) => eprintln!("Failed to create output file."),
-            }
-        } else {
-            // otherwise print standard output and error messages
-            if !standard_out.is_empty() {
+            } else {
+                // otherwise print standard output and error messages
                 println!("{}", standard_out.trim());
             }
         }
 
+        // handle sta
         if !standard_err.is_empty() {
-            println!("{}", standard_err.trim());
+            if std_err_fname.is_some() {
+                match File::create(std_err_fname.as_ref().expect("error_file is None")) {
+                    Ok(mut file) => {
+                        match file.write_all(standard_err.as_bytes()) {
+                            Ok(_) => {}
+                            Err(_) => eprintln!("Failed to write to error file."),
+                        };
+                    }
+                    Err(_) => eprintln!("Failed to create error file."),
+                }
+            } else {
+                println!("{}", standard_err.trim());
+            }
         }
     }
 }
