@@ -160,6 +160,7 @@ fn main_loop(execs: &HashMap<String, String>) {
             if std_out_fname.is_some() {
                 match File::options()
                     .append(is_append)
+                    .write(true)
                     .create(true)
                     .open(std_out_fname.as_ref().expect("output_file is None"))
                 {
@@ -181,6 +182,7 @@ fn main_loop(execs: &HashMap<String, String>) {
         if std_err_fname.is_some() {
             match File::options()
                 .append(is_append)
+                .write(true)
                 .create(true)
                 .open(std_err_fname.as_ref().expect("error_file is None"))
             {
