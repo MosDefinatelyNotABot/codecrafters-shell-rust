@@ -125,7 +125,7 @@ fn main_loop(execs: &HashMap<String, String>) {
             }
         } else {
             // error message if command not found
-            standard_err = "{}: not found".to_string();
+            standard_err = format!("{}: command not found", cmd).to_string();
         }
 
         // at the end of each iteration, print the output and error messages
