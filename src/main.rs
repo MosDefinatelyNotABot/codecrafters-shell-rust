@@ -159,8 +159,8 @@ fn main_loop(execs: &HashMap<String, String>) {
             }
         }
 
-        // handle sta
-        if !standard_err.is_empty() {
+        // handle standard error
+        if standard_err.is_empty() {
             if std_err_fname.is_some() {
                 match File::create(std_err_fname.as_ref().expect("error_file is None")) {
                     Ok(mut file) => {
