@@ -156,26 +156,24 @@ fn main_loop(execs: &HashMap<String, String>) {
 
         // at the end of each iteration, print the output and error messages
         // handle standard out
-        if !standard_out.is_empty() {
-            if std_out_fname.is_some() {
-                match File::options()
-                    .append(is_append)
-                    .write(true)
-                    .create(true)
-                    .open(std_out_fname.as_ref().expect("output_file is None"))
-                {
-                    Ok(mut file) => {
-                        match file.write_all(standard_out.as_bytes()) {
-                            Ok(_) => {}
-                            Err(_) => eprintln!("Failed to write to output file."),
-                        };
-                    }
-                    Err(_) => eprintln!("Failed to create output file."),
+        if std_out_fname.is_some() {
+            match File::options()
+                .append(is_append)
+                .write(true)
+                .create(true)
+                .open(std_out_fname.as_ref().expect("output_file is None"))
+            {
+                Ok(mut file) => {
+                    match file.write_all(standard_out.as_bytes()) {
+                        Ok(_) => {}
+                        Err(_) => eprintln!("Failed to write to output file."),
+                    };
                 }
-            } else {
-                // otherwise print standard output and error messages
-                print!("{}", standard_out);
+                Err(_) => eprintln!("Failed to create output file."),
             }
+        } else {
+            // otherwise print standard output and error messages
+            print!("{}", standard_out);
         }
 
         // handle standard error
