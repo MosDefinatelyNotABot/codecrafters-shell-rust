@@ -79,7 +79,7 @@ fn main_loop(execs: &HashMap<String, String>) {
         } else if cmd.as_str() == "pwd" {
             // prints current directory to stdout
             match std::env::current_dir() {
-                Ok(dir) => standard_out = dir.to_string_lossy().to_string(),
+                Ok(dir) => standard_out = format!("{}\n", dir.to_string_lossy()),
                 Err(e) => standard_err = e.to_string(),
             }
         } else if cmd.as_str() == "type" {
@@ -91,9 +91,9 @@ fn main_loop(execs: &HashMap<String, String>) {
             if execs.contains_key(&args[0]) {
                 // check if it's a shell builtin
                 if execs[&args[0]] == "BUILTIN" {
-                    standard_out = format!("{} is a shell builtin", args[0]);
+                    standard_out = format!("{} is a shell builtin\n", args[0]);
                 } else {
-                    standard_out = format!("{} is {}", args[0], execs[&args[0]]);
+                    standard_out = format!("{} is {}\n", args[0], execs[&args[0]]);
                 }
             } else {
                 standard_err = format!("{}: not found", args[0]);
@@ -170,8 +170,8 @@ fn main_loop(execs: &HashMap<String, String>) {
                 }
                 Err(_) => eprintln!("Failed to create error file."),
             }
-        } else {
-            println!("{}", standard_err.trim());
+        } else if !standard_err.is_empty() {
+            eprint!("{}", standard_err);
         }
     }
 }
