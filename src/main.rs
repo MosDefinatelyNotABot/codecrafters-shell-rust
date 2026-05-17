@@ -105,7 +105,10 @@ fn main_loop(execs: &HashMap<String, String>) {
                 } else {
                     match std::env::set_current_dir(&args[0]) {
                         Ok(_) => {}
-                        Err(_) => standard_err = "{}: No such file or directory".to_string(),
+                        Err(_) => {
+                            standard_err =
+                                format!("{}: {}: No such file or direcotry", cmd, args[0])
+                        }
                     }
                 }
             }
