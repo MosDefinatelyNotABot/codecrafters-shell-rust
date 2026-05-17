@@ -160,20 +160,19 @@ fn main_loop(execs: &HashMap<String, String>) {
         }
 
         // handle standard error
-        if standard_err.is_empty() {
-            if std_err_fname.is_some() {
-                match File::create(std_err_fname.as_ref().expect("error_file is None")) {
-                    Ok(mut file) => {
-                        match file.write_all(standard_err.as_bytes()) {
-                            Ok(_) => {}
-                            Err(_) => eprintln!("Failed to write to error file."),
-                        };
-                    }
-                    Err(_) => eprintln!("Failed to create error file."),
+
+        if std_err_fname.is_some() {
+            match File::create(std_err_fname.as_ref().expect("error_file is None")) {
+                Ok(mut file) => {
+                    match file.write_all(standard_err.as_bytes()) {
+                        Ok(_) => {}
+                        Err(_) => eprintln!("Failed to write to error file."),
+                    };
                 }
-            } else {
-                println!("{}", standard_err.trim());
+                Err(_) => eprintln!("Failed to create error file."),
             }
+        } else {
+            println!("{}", standard_err.trim());
         }
     }
 }
