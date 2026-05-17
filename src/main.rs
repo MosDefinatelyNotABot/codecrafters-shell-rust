@@ -80,7 +80,7 @@ fn main_loop(execs: &HashMap<String, String>) {
             // prints current directory to stdout
             match std::env::current_dir() {
                 Ok(dir) => standard_out = format!("{}\n", dir.to_string_lossy()),
-                Err(e) => standard_err = e.to_string(),
+                Err(e) => standard_err = format!("{}\n", e.to_string()),
             }
         } else if cmd.as_str() == "type" {
             // prints the type of the command to stdout
@@ -109,17 +109,17 @@ fn main_loop(execs: &HashMap<String, String>) {
                             Ok(_) => {}
                             Err(_) => {
                                 standard_err =
-                                    "Failed to set current directory to HOME.".to_string()
+                                    "Failed to set current directory to HOME.\n".to_string()
                             }
                         },
-                        Err(_) => standard_err = "HOME not set".to_string(),
+                        Err(_) => standard_err = "HOME not set\n".to_string(),
                     }
                 } else {
                     match std::env::set_current_dir(&args[0]) {
                         Ok(_) => {}
                         Err(_) => {
                             standard_err =
-                                format!("{}: {}: No such file or directory", cmd, args[0])
+                                format!("{}: {}: No such file or directory\n", cmd, args[0])
                         }
                     }
                 }
@@ -132,12 +132,12 @@ fn main_loop(execs: &HashMap<String, String>) {
                     standard_err = String::from_utf8_lossy(&output.stderr).to_string();
                 }
                 Err(err) => {
-                    standard_err = format!("{} failed to execute: {}", cmd, err).to_string()
+                    standard_err = format!("{} failed to execute: {}\n", cmd, err).to_string()
                 }
             }
         } else {
             // error message if command not found
-            standard_err = format!("{}: command not found", cmd).to_string();
+            standard_err = format!("{}: command not found\n", cmd).to_string();
         }
 
         // at the end of each iteration, print the output and error messages
