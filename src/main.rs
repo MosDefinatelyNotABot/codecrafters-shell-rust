@@ -75,7 +75,7 @@ fn main_loop(execs: &HashMap<String, String>) {
             return;
         } else if cmd.as_str() == "echo" {
             // print args to stdout
-            standard_out = args.join(" ").trim().to_string();
+            standard_out = format!("{}\n", args.join(" ").trim().to_string());
         } else if cmd.as_str() == "pwd" {
             // prints current directory to stdout
             match std::env::current_dir() {
@@ -146,7 +146,7 @@ fn main_loop(execs: &HashMap<String, String>) {
             if std_out_fname.is_some() {
                 match File::create(std_out_fname.as_ref().expect("output_file is None")) {
                     Ok(mut file) => {
-                        match file.write_all(standard_out.as_bytes()) {
+                        match file.write_all(standard_out.trim().as_bytes()) {
                             Ok(_) => {}
                             Err(_) => eprintln!("Failed to write to output file."),
                         };
@@ -155,7 +155,7 @@ fn main_loop(execs: &HashMap<String, String>) {
                 }
             } else {
                 // otherwise print standard output and error messages
-                println!("{}", standard_out.trim());
+                print!("{}", standard_out);
             }
         }
 
