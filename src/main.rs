@@ -107,7 +107,7 @@ fn main_loop(execs: &HashMap<String, String>) {
                         Ok(_) => {}
                         Err(_) => {
                             standard_err =
-                                format!("{}: {}: No such file or direcotry", cmd, args[0])
+                                format!("{}: {}: No such file or directory", cmd, args[0])
                         }
                     }
                 }
