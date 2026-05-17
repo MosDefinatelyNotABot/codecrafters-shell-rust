@@ -126,10 +126,8 @@ fn main_loop(execs: &HashMap<String, String>) {
         }
 
         // at the end of each iteration, print the output and error messages
-        if !standard_err.is_empty() {
-            // dont redirect to file in the case of an error
-            println!("{}", standard_err.trim());
-        } else if output_file.is_some() && !standard_out.is_empty() {
+
+        if output_file.is_some() && !standard_out.is_empty() {
             match File::create(output_file.as_ref().expect("output_file is None")) {
                 Ok(mut file) => {
                     match file.write_all(standard_out.as_bytes()) {
@@ -144,6 +142,10 @@ fn main_loop(execs: &HashMap<String, String>) {
             if !standard_out.is_empty() {
                 println!("{}", standard_out.trim());
             }
+        }
+
+        if !standard_err.is_empty() {
+            eprintln!("{}", standard_err.trim());
         }
     }
 }
