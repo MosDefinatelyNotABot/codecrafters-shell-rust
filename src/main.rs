@@ -155,7 +155,7 @@ fn main_loop(execs: &HashMap<String, String>) {
                 }
             } else {
                 // otherwise print standard output and error messages
-                print!("{}", standard_out.trim());
+                println!("{}", standard_out.trim());
             }
         }
 
