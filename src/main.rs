@@ -146,7 +146,7 @@ fn main_loop(execs: &HashMap<String, String>) {
             if std_out_fname.is_some() {
                 match File::create(std_out_fname.as_ref().expect("output_file is None")) {
                     Ok(mut file) => {
-                        match file.write_all(standard_out.trim().as_bytes()) {
+                        match file.write_all(standard_out.as_bytes()) {
                             Ok(_) => {}
                             Err(_) => eprintln!("Failed to write to output file."),
                         };
@@ -163,7 +163,7 @@ fn main_loop(execs: &HashMap<String, String>) {
         if std_err_fname.is_some() {
             match File::create(std_err_fname.as_ref().expect("error_file is None")) {
                 Ok(mut file) => {
-                    match file.write_all(standard_err.trim().as_bytes()) {
+                    match file.write_all(standard_err.as_bytes()) {
                         Ok(_) => {}
                         Err(_) => eprintln!("Failed to write to error file."),
                     };
