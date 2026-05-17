@@ -85,7 +85,7 @@ fn main_loop(execs: &HashMap<String, String>) {
         } else if cmd.as_str() == "type" {
             // prints the type of the command to stdout
             if args.len() != 1 {
-                standard_err = "error try: type <command>".to_string();
+                standard_err = "error try: type <command>\n".to_string();
             }
 
             if execs.contains_key(&args[0]) {
@@ -96,7 +96,7 @@ fn main_loop(execs: &HashMap<String, String>) {
                     standard_out = format!("{} is {}\n", args[0], execs[&args[0]]);
                 }
             } else {
-                standard_err = format!("{}: not found", args[0]);
+                standard_err = format!("{}: not found\n", args[0]);
             }
         } else if cmd.as_str() == "cd" {
             // changes directory to the specified path
