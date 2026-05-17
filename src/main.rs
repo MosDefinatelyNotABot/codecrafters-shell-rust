@@ -111,18 +111,25 @@ fn main_loop(execs: &HashMap<String, String>) {
             }
         } else if execs.contains_key(&cmd) {
             // executes shell command with args
-            match Command::new(cmd).args(args).output() {
-                Ok(output) => standard_out = String::from_utf8_lossy(&output.stdout).to_string(),
-                Err(_) => standard_err = "{} failed to execute.".to_string(),
+            match Command::new(&cmd).args(args).output() {
+                Ok(output) => {
+                    standard_out = String::from_utf8_lossy(&output.stdout).to_string();
+                    standard_err = String::from_utf8_lossy(&output.stderr).to_string();
+                }
+                Err(err) => {
+                    standard_err = format!("{} failed to execute: {}", cmd, err).to_string()
+                }
             }
         } else {
             // error message if command not found
-            // println!("{}: not found", cmd);
             standard_err = "{}: not found".to_string();
         }
 
         // at the end of each iteration, print the output and error messages
-        if output_file.is_some() && !standard_out.is_empty() {
+        if !standard_err.is_empty() {
+            // dont redirect to file in the case of an error
+            println!("{}", standard_err.trim());
+        } else if output_file.is_some() && !standard_out.is_empty() {
             match File::create(output_file.as_ref().expect("output_file is None")) {
                 Ok(mut file) => {
                     match file.write_all(standard_out.as_bytes()) {
@@ -136,9 +143,6 @@ fn main_loop(execs: &HashMap<String, String>) {
             // otherwise print standard output and error messages
             if !standard_out.is_empty() {
                 println!("{}", standard_out.trim());
-            }
-            if !standard_err.is_empty() {
-                eprintln!("{}", standard_err.trim());
             }
         }
     }
