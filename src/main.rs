@@ -38,6 +38,7 @@ fn main_loop(execs: &HashMap<String, String>) {
         let (cmd, mut args) = quote_parser(&cmd_input);
         let mut std_out_fname: Option<String> = None;
         let mut std_err_fname: Option<String> = None;
+        let mut is_append = false;
 
         let mut standard_out = String::new();
         let mut standard_err = String::new();
@@ -46,14 +47,27 @@ fn main_loop(execs: &HashMap<String, String>) {
         if args.contains(&">".to_string())
             || args.contains(&"1>".to_string())
             || args.contains(&"2>".to_string())
+            || args.contains(&">>".to_string())
+            || args.contains(&"1>>".to_string())
+            || args.contains(&"2>>".to_string())
         {
             let pipe_index = args
                 .iter()
-                .position(|arg| arg == ">" || arg == "1>" || arg == "2>")
+                .position(|arg| {
+                    arg == ">"
+                        || arg == "1>"
+                        || arg == "2>"
+                        || arg == ">>"
+                        || arg == "1>>"
+                        || arg == "2>>"
+                })
                 // should not ever be None
                 .expect("No output redirection operator found.");
 
-            let is_sent_to_err = args[pipe_index] == "2>";
+            let is_sent_to_err = (args[pipe_index] == "2>") || (args[pipe_index] == "2>>");
+            is_append = (args[pipe_index] == ">>")
+                || (args[pipe_index] == "1>>")
+                || (args[pipe_index] == "2>>");
 
             // output_file = Some(args.get(pipe_index + 1).expect("").clone());
             match args.get(pipe_index + 1) {
@@ -144,7 +158,11 @@ fn main_loop(execs: &HashMap<String, String>) {
         // handle standard out
         if !standard_out.is_empty() {
             if std_out_fname.is_some() {
-                match File::create(std_out_fname.as_ref().expect("output_file is None")) {
+                match File::options()
+                    .append(is_append)
+                    .create(true)
+                    .open(std_out_fname.as_ref().expect("output_file is None"))
+                {
                     Ok(mut file) => {
                         match file.write_all(standard_out.as_bytes()) {
                             Ok(_) => {}
@@ -161,7 +179,11 @@ fn main_loop(execs: &HashMap<String, String>) {
 
         // handle standard error
         if std_err_fname.is_some() {
-            match File::create(std_err_fname.as_ref().expect("error_file is None")) {
+            match File::options()
+                .append(is_append)
+                .create(true)
+                .open(std_err_fname.as_ref().expect("error_file is None"))
+            {
                 Ok(mut file) => {
                     match file.write_all(standard_err.as_bytes()) {
                         Ok(_) => {}
