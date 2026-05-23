@@ -3,6 +3,7 @@ mod parse_args;
 
 use find_executables::find_executables;
 use parse_args::term_tokenizer;
+use std::fs::File;
 use std::io::{self, Write};
 use std::{collections::HashMap, process::Command};
 
