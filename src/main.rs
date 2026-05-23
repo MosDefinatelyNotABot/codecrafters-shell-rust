@@ -1,11 +1,22 @@
 mod find_executables;
+mod input_handler;
+mod output_handler;
 mod parse_args;
 
+use crossterm::{
+    cursor,
+    event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode},
+};
 use find_executables::find_executables;
-use parse_args::term_tokenizer;
-use std::fs::File;
-use std::io::{self, Write};
-use std::{collections::HashMap, process::Command};
+use input_handler::handle_input;
+
+use std::collections::HashMap;
+use std::io::Error;
+use std::io::{Write, stdout};
+
+use crate::output_handler::handle_output;
 
 static BUILTINS: &[&str] = &["exit", "echo", "type", "pwd", "cd"];
 
@@ -18,182 +29,78 @@ fn main() {
         execs.insert(bultin.to_string(), "BUILTIN".to_string());
     }
 
-    main_loop(&execs);
+    main_loop(&execs).unwrap();
 }
 
-fn main_loop(execs: &HashMap<String, String>) {
+struct RawModeWrapper;
+
+impl RawModeWrapper {
+    fn new() -> Result<Self, Error> {
+        enable_raw_mode()?;
+        Ok(Self)
+    }
+}
+
+impl Drop for RawModeWrapper {
+    fn drop(&mut self) {
+        disable_raw_mode().unwrap();
+    }
+}
+
+fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
+    let mut _raw_mode = RawModeWrapper::new().unwrap();
+    let mut input_buffer = String::new();
+    // let mut terminal_result = TerminalResult::default();
+
+    // print first line marker.
+    print!("$ ");
+    stdout().flush()?;
+
     loop {
-        print!("$ ");
-        io::stdout().flush().unwrap();
+        if let Event::Key(key) = event::read()? {
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
 
-        // string buffer for user input
-        let mut cmd_input = String::new();
+            match key.code {
+                KeyCode::Tab => {
+                    print!("<TAB!>")
+                }
+                KeyCode::Enter => {
+                    // does a thing here
+                    let terminal_result = handle_input(&input_buffer, &execs);
 
-        // read user input from stdin
-        io::stdin()
-            .read_line(&mut cmd_input)
-            .expect("Failed to readline.");
+                    if terminal_result._exit_flag {
+                        break;
+                    }
+                    print!("\r\n");
+                    handle_output(&terminal_result);
 
-        // parse user input into command and arguments
-        let (cmd, mut args) = term_tokenizer(&cmd_input);
-        let mut std_out_fname: Option<String> = None;
-        let mut std_err_fname: Option<String> = None;
-        let mut is_append = false;
-
-        let mut standard_out = String::new();
-        let mut standard_err = String::new();
-
-        // check for output redirection
-        if args.contains(&">".to_string())
-            || args.contains(&"1>".to_string())
-            || args.contains(&"2>".to_string())
-            || args.contains(&">>".to_string())
-            || args.contains(&"1>>".to_string())
-            || args.contains(&"2>>".to_string())
-        {
-            let pipe_index = args
-                .iter()
-                .position(|arg| {
-                    arg == ">"
-                        || arg == "1>"
-                        || arg == "2>"
-                        || arg == ">>"
-                        || arg == "1>>"
-                        || arg == "2>>"
-                })
-                // should not ever be None
-                .expect("No output redirection operator found.");
-
-            let is_sent_to_err = (args[pipe_index] == "2>") || (args[pipe_index] == "2>>");
-            is_append = (args[pipe_index] == ">>")
-                || (args[pipe_index] == "1>>")
-                || (args[pipe_index] == "2>>");
-
-            // output_file = Some(args.get(pipe_index + 1).expect("").clone());
-            match args.get(pipe_index + 1) {
-                Some(file) => {
-                    if is_sent_to_err {
-                        std_err_fname = Some(file.clone());
-                    } else {
-                        std_out_fname = Some(file.clone());
+                    // print!("\r\n\"{}\"", input_buffer);
+                    input_buffer.clear();
+                    print!("\r$ ");
+                    stdout().flush()?;
+                }
+                KeyCode::Backspace => {
+                    if input_buffer.pop().is_some() {
+                        execute!(stdout(), cursor::MoveLeft(1))?;
+                        print!(" ");
+                        execute!(stdout(), cursor::MoveLeft(1))?;
                     }
                 }
-                None => standard_err = "No output file specified.".to_string(),
-            }
+                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    break;
+                }
+                KeyCode::Char(c) => {
+                    input_buffer.push(c);
+                    print!("{}", c);
+                    stdout().flush()?;
+                }
 
-            args = args[..pipe_index].to_vec();
-        };
-
-        // handle builtin commands
-        if cmd.as_str() == "exit" {
-            return;
-        } else if cmd.as_str() == "echo" {
-            // print args to stdout
-            standard_out = format!("{}\n", args.join(" ").trim());
-        } else if cmd.as_str() == "pwd" {
-            // prints current directory to stdout
-            match std::env::current_dir() {
-                Ok(dir) => standard_out = format!("{}\n", dir.to_string_lossy()),
-                Err(e) => standard_err = format!("{}\n", e),
+                _ => {}
             }
-        } else if cmd.as_str() == "type" {
-            // prints the type of the command to stdout
-            if args.len() != 1 {
-                standard_err = "error try: type <command>\n".to_string();
-            }
-
-            if execs.contains_key(&args[0]) {
-                // check if it's a shell builtin
-                if execs[&args[0]] == "BUILTIN" {
-                    standard_out = format!("{} is a shell builtin\n", args[0]);
-                } else {
-                    standard_out = format!("{} is {}\n", args[0], execs[&args[0]]);
-                }
-            } else {
-                standard_err = format!("{}: not found\n", args[0]);
-            }
-        } else if cmd.as_str() == "cd" {
-            // changes directory to the specified path
-            if args.len() != 1 {
-                standard_err = "error try: cd <directory>".to_string();
-            } else {
-                if &args[0] == "~" {
-                    match std::env::var("HOME") {
-                        Ok(home) => match std::env::set_current_dir(&home) {
-                            Ok(_) => {}
-                            Err(_) => {
-                                standard_err =
-                                    "Failed to set current directory to HOME.\n".to_string()
-                            }
-                        },
-                        Err(_) => standard_err = "HOME not set\n".to_string(),
-                    }
-                } else {
-                    match std::env::set_current_dir(&args[0]) {
-                        Ok(_) => {}
-                        Err(_) => {
-                            standard_err =
-                                format!("{}: {}: No such file or directory\n", cmd, args[0])
-                        }
-                    }
-                }
-            }
-        } else if execs.contains_key(&cmd) {
-            // executes shell command with args
-            match Command::new(&cmd).args(args).output() {
-                Ok(output) => {
-                    standard_out = String::from_utf8_lossy(&output.stdout).to_string();
-                    standard_err = String::from_utf8_lossy(&output.stderr).to_string();
-                }
-                Err(err) => {
-                    standard_err = format!("{} failed to execute: {}\n", cmd, err).to_string()
-                }
-            }
-        } else {
-            // error message if command not found
-            standard_err = format!("{}: command not found\n", cmd).to_string();
-        }
-
-        // at the end of each iteration, print the output and error messages
-        // handle standard out
-        if let Some(std_out_fname) = std_out_fname {
-            match File::options()
-                .append(is_append)
-                .write(true)
-                .create(true)
-                .open(std_out_fname)
-            {
-                Ok(mut file) => {
-                    match file.write_all(standard_out.as_bytes()) {
-                        Ok(_) => {}
-                        Err(_) => eprintln!("Failed to write to output file."),
-                    };
-                }
-                Err(_) => eprintln!("Failed to create output file."),
-            }
-        } else {
-            // otherwise print standard output and error messages
-            print!("{}", standard_out);
-        }
-
-        // handle standard error
-        if let Some(std_err_fname) = std_err_fname {
-            match File::options()
-                .append(is_append)
-                .write(true)
-                .create(true)
-                .open(std_err_fname)
-            {
-                Ok(mut file) => {
-                    match file.write_all(standard_err.as_bytes()) {
-                        Ok(_) => {}
-                        Err(_) => eprintln!("Failed to write to error file."),
-                    };
-                }
-                Err(_) => eprintln!("Failed to create error file."),
-            }
-        } else if !standard_err.is_empty() {
-            eprint!("{}", standard_err);
         }
     }
+
+    Ok(())
 }
