@@ -1,6 +1,6 @@
 static SPECIAL_CHARS: &[char] = &['\"', '\\', '$', '`', '\n'];
 
-pub(crate) fn quote_parser(args: &String) -> (String, Vec<String>) {
+pub(crate) fn term_tokenizer(args: &String) -> (String, Vec<String>) {
     // parse the args with quotes into a vector of strings
     // extract the command part of the string
 
@@ -90,7 +90,7 @@ mod tests {
     use super::*;
 
     fn parse(input: &str) -> (String, String) {
-        let (cmd, args) = quote_parser(&input.to_string());
+        let (cmd, args) = term_tokenizer(&input.to_string());
         (cmd, args.join(" "))
     }
 

@@ -2,8 +2,7 @@ mod find_executables;
 mod parse_args;
 
 use find_executables::find_executables;
-use parse_args::quote_parser;
-use std::fs::File;
+use parse_args::term_tokenizer;
 use std::io::{self, Write};
 use std::{collections::HashMap, process::Command};
 
@@ -35,7 +34,7 @@ fn main_loop(execs: &HashMap<String, String>) {
             .expect("Failed to readline.");
 
         // parse user input into command and arguments
-        let (cmd, mut args) = quote_parser(&cmd_input);
+        let (cmd, mut args) = term_tokenizer(&cmd_input);
         let mut std_out_fname: Option<String> = None;
         let mut std_err_fname: Option<String> = None;
         let mut is_append = false;
