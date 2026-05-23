@@ -5,7 +5,6 @@ pub(crate) fn find_executables(path: &str) -> HashMap<String, String> {
     // get all the elements in the path
     let dirs_in_path = path
         .split(":")
-        .into_iter()
         .filter(|dir| !dir.is_empty())
         .collect::<Vec<_>>();
 

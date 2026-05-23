@@ -89,12 +89,12 @@ fn main_loop(execs: &HashMap<String, String>) {
             return;
         } else if cmd.as_str() == "echo" {
             // print args to stdout
-            standard_out = format!("{}\n", args.join(" ").trim().to_string());
+            standard_out = format!("{}\n", args.join(" ").trim());
         } else if cmd.as_str() == "pwd" {
             // prints current directory to stdout
             match std::env::current_dir() {
                 Ok(dir) => standard_out = format!("{}\n", dir.to_string_lossy()),
-                Err(e) => standard_err = format!("{}\n", e.to_string()),
+                Err(e) => standard_err = format!("{}\n", e),
             }
         } else if cmd.as_str() == "type" {
             // prints the type of the command to stdout
@@ -156,12 +156,12 @@ fn main_loop(execs: &HashMap<String, String>) {
 
         // at the end of each iteration, print the output and error messages
         // handle standard out
-        if std_out_fname.is_some() {
+        if let Some(std_out_fname) = std_out_fname {
             match File::options()
                 .append(is_append)
                 .write(true)
                 .create(true)
-                .open(std_out_fname.as_ref().expect("output_file is None"))
+                .open(std_out_fname)
             {
                 Ok(mut file) => {
                     match file.write_all(standard_out.as_bytes()) {
@@ -177,12 +177,12 @@ fn main_loop(execs: &HashMap<String, String>) {
         }
 
         // handle standard error
-        if std_err_fname.is_some() {
+        if let Some(std_err_fname) = std_err_fname {
             match File::options()
                 .append(is_append)
                 .write(true)
                 .create(true)
-                .open(std_err_fname.as_ref().expect("error_file is None"))
+                .open(std_err_fname)
             {
                 Ok(mut file) => {
                     match file.write_all(standard_err.as_bytes()) {

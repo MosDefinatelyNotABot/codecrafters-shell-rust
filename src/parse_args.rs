@@ -1,6 +1,6 @@
 static SPECIAL_CHARS: &[char] = &['\"', '\\', '$', '`', '\n'];
 
-pub(crate) fn term_tokenizer(args: &String) -> (String, Vec<String>) {
+pub(crate) fn term_tokenizer(args: &str) -> (String, Vec<String>) {
     // parse the args with quotes into a vector of strings
     // extract the command part of the string
 
@@ -17,14 +17,14 @@ pub(crate) fn term_tokenizer(args: &String) -> (String, Vec<String>) {
     while let Some(char) = chars_iter.next() {
         if char == '\\' {
             // push the next char and advance
-            let next_char = chars_iter.next();
-            if let Some(next_char) = next_char {
-                snippet.push(next_char);
+            let c = chars_iter.next();
+            if let Some(c) = c {
+                snippet.push(c);
             }
         } else if char == '\'' {
             // advance to the next quote
             // and capture the snippet
-            while let Some(c) = chars_iter.next() {
+            for c in chars_iter.by_ref() {
                 if c == '\'' {
                     break;
                 }
@@ -41,10 +41,10 @@ pub(crate) fn term_tokenizer(args: &String) -> (String, Vec<String>) {
             // and capture the snippet
             while let Some(c) = chars_iter.next() {
                 if c == '\\' {
-                    let next_c = chars_iter.next();
-
-                    if next_c.is_some() && SPECIAL_CHARS.contains(&next_c.unwrap()) {
-                        snippet.push(next_c.unwrap());
+                    if let Some(next_char) = chars_iter.next()
+                        && SPECIAL_CHARS.contains(&next_char)
+                    {
+                        snippet.push(next_char);
                     }
                 } else if c == '"' {
                     // peek ahead to see if next char is whitespace
@@ -67,7 +67,6 @@ pub(crate) fn term_tokenizer(args: &String) -> (String, Vec<String>) {
                 snippet = String::new();
             }
         } else if char.is_whitespace() {
-            input.chars().next();
             if !snippet.trim().is_empty() {
                 output.push(snippet.to_string());
                 snippet = String::new();
@@ -90,7 +89,7 @@ mod tests {
     use super::*;
 
     fn parse(input: &str) -> (String, String) {
-        let (cmd, args) = term_tokenizer(&input.to_string());
+        let (cmd, args) = term_tokenizer(&input);
         (cmd, args.join(" "))
     }
 
