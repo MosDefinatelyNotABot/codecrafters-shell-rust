@@ -68,7 +68,7 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
                 }
                 KeyCode::Enter => {
                     // does a thing here
-                    let terminal_result = handle_input(&input_buffer, &execs);
+                    let terminal_result = handle_input(&input_buffer, execs);
 
                     if terminal_result._exit_flag {
                         break;
@@ -81,12 +81,10 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
                     print!("\r$ ");
                     stdout().flush()?;
                 }
-                KeyCode::Backspace => {
-                    if input_buffer.pop().is_some() {
-                        execute!(stdout(), cursor::MoveLeft(1))?;
-                        print!(" ");
-                        execute!(stdout(), cursor::MoveLeft(1))?;
-                    }
+                KeyCode::Backspace if input_buffer.pop().is_some() => {
+                    execute!(stdout(), cursor::MoveLeft(1))?;
+                    print!(" ");
+                    execute!(stdout(), cursor::MoveLeft(1))?;
                 }
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     break;

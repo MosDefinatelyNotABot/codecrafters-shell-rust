@@ -4,6 +4,7 @@ use std::{collections::HashMap, process::Command};
 
 use crate::parse_args::term_tokenizer;
 
+#[derive(Default)]
 pub(crate) struct TerminalResult {
     pub std_out_fname: Option<String>,
     pub std_err_fname: Option<String>,
@@ -28,22 +29,10 @@ impl TerminalResult {
     }
 }
 
-impl Default for TerminalResult {
-    fn default() -> Self {
-        Self {
-            std_out_fname: None,
-            std_err_fname: None,
-            standard_out: String::new(),
-            standard_err: String::new(),
-            is_append: false,
-            _exit_flag: false,
-            _exit_code: 0,
-        }
-    }
-}
-
 pub(crate) fn handle_input(input_buffer: &str, execs: &HashMap<String, String>) -> TerminalResult {
-    let (cmd, mut args) = term_tokenizer(&input_buffer);
+    let (cmd, mut args) = term_tokenizer(input_buffer);
+
+    // return values in TerminalResult object
     let mut std_out_fname: Option<String> = None;
     let mut std_err_fname: Option<String> = None;
     let mut is_append = false;
