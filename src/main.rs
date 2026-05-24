@@ -54,8 +54,8 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
 
     // buffer to hold user input.
     let mut input_buffer = String::new();
-
     let mut completion_handler = Completions::new(&execs.keys().cloned().collect::<Vec<String>>());
+    let mut tab_count = 0;
 
     // print first line marker.
     print!("$ ");
@@ -68,18 +68,46 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
             }
 
             match key.code {
-                KeyCode::Tab => match completion_handler.complete(&input_buffer) {
-                    Some(completion) => {
-                        input_buffer = format!("{} ", completion);
-                        execute!(stdout(), Clear(ClearType::CurrentLine))?;
-                        print!("\r$ {}", input_buffer);
-                        stdout().flush()?;
+                KeyCode::Tab => {
+                    tab_count += 1;
+                    let completions = completion_handler.get_all_completions(&input_buffer);
+
+                    match completions.len() {
+                        0 => {
+                            // no matches
+                            print!("\x07");
+                            stdout().flush()?;
+                        }
+                        1 => {
+                            // unique match
+                            input_buffer = format!("{} ", completions[0]);
+                            execute!(stdout(), Clear(ClearType::CurrentLine))?;
+                            print!("\r$ {}", input_buffer);
+                            stdout().flush()?;
+                        }
+                        _ if tab_count == 1 => {
+                            print!("\x07");
+                            stdout().flush()?;
+                        }
+                        _ => {
+                            // second tab — print all matches, restore prompt
+                            print!("\r\n{}", completions.join("  "));
+                            print!("\r\n$ {}", input_buffer);
+                            stdout().flush()?;
+                            tab_count = 0;
+                        }
                     }
-                    None => {
-                        print!("\x07");
-                        stdout().flush()?;
-                    }
-                },
+                    // Some(completion) => {
+                    //     input_buffer = format!("{} ", completion);
+                    //     execute!(stdout(), Clear(ClearType::CurrentLine))?;
+                    //     print!("\r$ {}", input_buffer);
+                    //     stdout().flush()?;
+                    // }
+                    // None => {
+                    //     print!("\x07");
+                    //     stdout().flush()?;
+                    // }
+                }
                 KeyCode::Enter | KeyCode::Char('j')
                     if key.code == KeyCode::Enter
                         || key.modifiers.contains(KeyModifiers::CONTROL) =>
