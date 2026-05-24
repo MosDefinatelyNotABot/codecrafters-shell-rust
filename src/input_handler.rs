@@ -11,7 +11,7 @@ pub(crate) struct TerminalResult {
     pub standard_out: String,
     pub standard_err: String,
     pub is_append: bool,
-    pub _exit_flag: bool,
+    pub exit_flag: bool,
     pub _exit_code: i32,
 }
 
@@ -23,7 +23,7 @@ impl TerminalResult {
             standard_out: String::new(),
             standard_err: String::new(),
             is_append: false,
-            _exit_flag: true,
+            exit_flag: true,
             _exit_code: 0,
         }
     }
@@ -154,7 +154,7 @@ pub(crate) fn handle_input(input_buffer: &str, execs: &HashMap<String, String>) 
         standard_out,
         standard_err,
         is_append,
-        _exit_flag: false,
+        exit_flag: false,
         _exit_code: 0,
     }
 }

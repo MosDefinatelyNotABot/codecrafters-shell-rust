@@ -1,3 +1,4 @@
+mod completions;
 mod find_executables;
 mod input_handler;
 mod output_handler;
@@ -7,7 +8,7 @@ use crossterm::{
     cursor,
     event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode},
+    terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode},
 };
 use find_executables::find_executables;
 use input_handler::handle_input;
@@ -16,7 +17,7 @@ use std::collections::HashMap;
 use std::io::Error;
 use std::io::{Write, stdout};
 
-use crate::output_handler::handle_output;
+use crate::{completions::Completions, output_handler::handle_output};
 
 static BUILTINS: &[&str] = &["exit", "echo", "type", "pwd", "cd"];
 
@@ -48,9 +49,13 @@ impl Drop for RawModeWrapper {
 }
 
 fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
+    // dropped at the end of the loop for cleanup.
     let mut _raw_mode = RawModeWrapper::new().unwrap();
+
+    // buffer to hold user input.
     let mut input_buffer = String::new();
-    // let mut terminal_result = TerminalResult::default();
+
+    let mut completion_handler = Completions::new(&execs.keys().cloned().collect::<Vec<String>>());
 
     // print first line marker.
     print!("$ ");
@@ -64,19 +69,24 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
 
             match key.code {
                 KeyCode::Tab => {
-                    print!("<TAB!>")
+                    if let Some(completion) = completion_handler.complete(&input_buffer) {
+                        input_buffer = format!("{} ", completion);
+                        execute!(stdout(), Clear(ClearType::CurrentLine))?;
+                        print!("\r$ {}", input_buffer);
+                        stdout().flush()?;
+                    }
                 }
                 KeyCode::Enter => {
-                    // does a thing here
+                    // does handles whatever input is in the buffer
                     let terminal_result = handle_input(&input_buffer, execs);
 
-                    if terminal_result._exit_flag {
+                    if terminal_result.exit_flag {
                         break;
                     }
+
                     print!("\r\n");
                     handle_output(&terminal_result);
 
-                    // print!("\r\n\"{}\"", input_buffer);
                     input_buffer.clear();
                     print!("\r$ ");
                     stdout().flush()?;
