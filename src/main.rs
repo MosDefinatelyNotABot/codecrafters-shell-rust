@@ -76,7 +76,10 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
                         stdout().flush()?;
                     }
                 }
-                KeyCode::Enter => {
+                KeyCode::Enter | KeyCode::Char('j')
+                    if key.code == KeyCode::Enter
+                        || key.modifiers.contains(KeyModifiers::CONTROL) =>
+                {
                     print!("\r\n");
                     stdout().flush()?;
 
