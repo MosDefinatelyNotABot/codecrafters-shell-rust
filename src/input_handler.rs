@@ -61,10 +61,10 @@ pub(crate) fn handle_input(input_buffer: &str, execs: &HashMap<String, String>) 
             // should not ever be None
             .expect("No output redirection operator found.");
 
-        let is_sent_to_err = (args[pipe_index] == "2>") || (args[pipe_index] == "2>>");
         is_append = (args[pipe_index] == ">>")
             || (args[pipe_index] == "1>>")
             || (args[pipe_index] == "2>>");
+        let is_sent_to_err = (args[pipe_index] == "2>") || (args[pipe_index] == "2>>");
 
         // output_file = Some(args.get(pipe_index + 1).expect("").clone());
         match args.get(pipe_index + 1) {
