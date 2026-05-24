@@ -68,14 +68,18 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
             }
 
             match key.code {
-                KeyCode::Tab => {
-                    if let Some(completion) = completion_handler.complete(&input_buffer) {
+                KeyCode::Tab => match completion_handler.complete(&input_buffer) {
+                    Some(completion) => {
                         input_buffer = format!("{} ", completion);
                         execute!(stdout(), Clear(ClearType::CurrentLine))?;
                         print!("\r$ {}", input_buffer);
                         stdout().flush()?;
                     }
-                }
+                    None => {
+                        print!("\x07");
+                        stdout().flush()?;
+                    }
+                },
                 KeyCode::Enter | KeyCode::Char('j')
                     if key.code == KeyCode::Enter
                         || key.modifiers.contains(KeyModifiers::CONTROL) =>
