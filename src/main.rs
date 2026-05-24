@@ -77,17 +77,21 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
                     }
                 }
                 KeyCode::Enter => {
-                    // does handles whatever input is in the buffer
-                    let terminal_result = handle_input(&input_buffer, execs);
+                    print!("\r\n");
+                    stdout().flush()?;
 
-                    if terminal_result.exit_flag {
-                        break;
+                    if !input_buffer.is_empty() {
+                        let terminal_result = handle_input(&input_buffer, execs);
+
+                        if terminal_result.exit_flag {
+                            break;
+                        }
+
+                        handle_output(&terminal_result);
+                        input_buffer.clear();
                     }
 
-                    print!("\r\n");
-                    handle_output(&terminal_result);
-
-                    input_buffer.clear();
+                    completion_handler.reset();
                     print!("\r$ ");
                     stdout().flush()?;
                 }
@@ -99,7 +103,7 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     break;
                 }
-                KeyCode::Char(c) => {
+                KeyCode::Char(c) if !c.is_control() => {
                     input_buffer.push(c);
                     print!("{}", c);
                     stdout().flush()?;

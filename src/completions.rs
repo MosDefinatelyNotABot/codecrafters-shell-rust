@@ -19,6 +19,12 @@ impl Completions {
         }
     }
 
+    pub(crate) fn reset(&mut self) {
+        self.completion_subset.clear();
+        self.base.clear();
+        self.iter_state = 0;
+    }
+
     pub(crate) fn _add(&mut self, completion: String) {
         self.available.push(completion);
         self.available

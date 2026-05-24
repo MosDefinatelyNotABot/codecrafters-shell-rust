@@ -5,6 +5,7 @@ use crate::input_handler::TerminalResult;
 pub(crate) fn handle_output(terminal_result: &TerminalResult) {
     // handle standard out
     if let Some(fname) = &terminal_result.std_out_fname {
+        // print!("{}\r\n", &fname);
         match File::options()
             .append(terminal_result.is_append)
             .write(true)
@@ -20,8 +21,7 @@ pub(crate) fn handle_output(terminal_result: &TerminalResult) {
             Err(_) => eprintln!("Failed to create output file."),
         }
     } else {
-        // otherwise print standard output and error messages
-        print!("{}", terminal_result.standard_out);
+        print!("{}", terminal_result.standard_out.replace('\n', "\r\n"));
     }
 
     // handle standard error
@@ -41,6 +41,6 @@ pub(crate) fn handle_output(terminal_result: &TerminalResult) {
             Err(_) => eprintln!("Failed to create error file."),
         }
     } else if !terminal_result.standard_err.is_empty() {
-        eprint!("{}", terminal_result.standard_err);
+        print!("{}", terminal_result.standard_err.replace('\n', "\r\n"));
     }
 }

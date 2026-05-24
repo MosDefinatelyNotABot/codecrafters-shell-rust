@@ -37,8 +37,7 @@ pub(crate) fn term_tokenizer(args: &str) -> (String, Vec<String>) {
                 snippet = String::new();
             }
         } else if char == '"' {
-            // advance to the next quote
-            // and capture the snippet
+            // advance to the next quote and capture the snippet
             while let Some(c) = chars_iter.next() {
                 if c == '\\' {
                     if let Some(next_char) = chars_iter.next()
@@ -47,25 +46,15 @@ pub(crate) fn term_tokenizer(args: &str) -> (String, Vec<String>) {
                         snippet.push(next_char);
                     }
                 } else if c == '"' {
-                    // peek ahead to see if next char is whitespace
-                    if chars_iter
-                        .clone()
-                        .peekable()
-                        .peek()
-                        .is_some_and(|c| c.is_whitespace())
-                    {
-                        break;
-                    }
+                    break;
                 } else {
                     snippet.push(c);
                 }
             }
 
-            // push the snippet to the output and reset.
-            if !snippet.trim().is_empty() {
-                output.push(snippet.to_string());
-                snippet = String::new();
-            }
+            // If the next char is not whitespace, the token continues unquoted —
+            // fall through to the outer loop to handle the remaining characters.
+            // Only flush the snippet when we hit whitespace or end of input.
         } else if char.is_whitespace() {
             if !snippet.trim().is_empty() {
                 output.push(snippet.to_string());
