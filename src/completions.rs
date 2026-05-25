@@ -40,3 +40,16 @@ impl Completions {
             .collect()
     }
 }
+
+pub(crate) fn longest_common_prefix(completions: &[String]) -> String {
+    completions
+        .iter()
+        .skip(1)
+        .fold(completions[0].clone(), |acc, s| {
+            acc.chars()
+                .zip(s.chars())
+                .take_while(|(a, b)| a == b)
+                .map(|(c, _)| c)
+                .collect()
+        })
+}

@@ -17,7 +17,10 @@ use std::collections::HashMap;
 use std::io::Error;
 use std::io::{Write, stdout};
 
-use crate::{completions::Completions, output_handler::handle_output};
+use crate::{
+    completions::{Completions, longest_common_prefix},
+    output_handler::handle_output,
+};
 
 static BUILTINS: &[&str] = &["exit", "echo", "type", "pwd", "cd"];
 
@@ -85,29 +88,28 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
                             print!("\r$ {}", input_buffer);
                             stdout().flush()?;
                         }
-                        _ if tab_count == 1 => {
-                            print!("\x07");
-                            stdout().flush()?;
-                        }
                         _ => {
-                            // second tab — print all matches, restore prompt
-                            print!("\r\n{}", completions.join("  "));
-                            print!("\r\n$ {}", input_buffer);
-                            stdout().flush()?;
-                            tab_count = 0;
+                            let lcp = longest_common_prefix(&completions);
+                            if lcp.len() > input_buffer.len() {
+                                // partial completion is possible
+                                input_buffer = lcp;
+                                execute!(stdout(), Clear(ClearType::CurrentLine))?;
+                                print!("\r$ {}", input_buffer);
+                                stdout().flush()?;
+                                tab_count = 0; // reset so next tab can bell/show-all if stuck
+                            } else if tab_count == 1 {
+                                print!("\x07");
+                                stdout().flush()?;
+                            } else {
+                                print!("\r\n{}", completions.join("  "));
+                                print!("\r\n$ {}", input_buffer);
+                                stdout().flush()?;
+                                tab_count = 0;
+                            }
                         }
                     }
-                    // Some(completion) => {
-                    //     input_buffer = format!("{} ", completion);
-                    //     execute!(stdout(), Clear(ClearType::CurrentLine))?;
-                    //     print!("\r$ {}", input_buffer);
-                    //     stdout().flush()?;
-                    // }
-                    // None => {
-                    //     print!("\x07");
-                    //     stdout().flush()?;
-                    // }
                 }
+
                 KeyCode::Enter | KeyCode::Char('j')
                     if key.code == KeyCode::Enter
                         || key.modifiers.contains(KeyModifiers::CONTROL) =>
@@ -130,14 +132,17 @@ fn main_loop(execs: &HashMap<String, String>) -> Result<(), Error> {
                     print!("\r$ ");
                     stdout().flush()?;
                 }
+
                 KeyCode::Backspace if input_buffer.pop().is_some() => {
                     execute!(stdout(), cursor::MoveLeft(1))?;
                     print!(" ");
                     execute!(stdout(), cursor::MoveLeft(1))?;
                 }
+
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     break;
                 }
+
                 KeyCode::Char(c) if !c.is_control() => {
                     input_buffer.push(c);
                     print!("{}", c);
